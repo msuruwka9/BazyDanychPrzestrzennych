@@ -1,0 +1,32 @@
+4. 
+CREATE TABLE buildings  (id INTEGER primary key, geometry geometry, name varchar(15));
+CREATE TABLE roads (id INTEGER primary key, geometry geometry, name varchar(15));
+CREATE TABLE poi (id INTEGER primary key, geometry geometry, name varchar(15));
+
+5. 
+insert into buildings(id, geometry, name) values
+	(1, 'POLYGON((8 4, 10.5 4, 10.5 1.5, 8 1.5, 8 4))', 'BuildingA'),
+	(2, 'POLYGON((4 7, 6 7, 6 5, 4 5, 4 7))', 'BuildingB'),
+	(3, 'POLYGON((3 8, 5 8, 5 6, 3 6, 3 8))', 'BuildingC'),
+	(4, 'POLYGON((9 9, 10 9, 10 8, 9 8, 9 9))', 'BuildingD'),
+	(5, 'POLYGON((1 2, 2 2, 2 1, 1 1, 1 2))', 'BuildingF');
+
+INSERT INTO poi VALUES
+	(1, 'POINT(6 9.5)', 'K'),
+	(2, 'POINT(6.6 6)', 'J'),
+	(3, 'POINT(9.5 6)', 'I'),
+	(4, 'POINT(1 3.5)', 'G'),
+	(5, 'POINT(5.5 1.5)', 'H');
+
+INSERT INTO roads VALUES
+	(1, 'LINESTRING(7.5 10.5, 7.5 0)', 'RoadY'),
+	(2, 'LINESTRING(0 4.5, 12 4.5)', 'RoadX');
+
+6a. select sum(ST_Length(geometry)) from roads;
+6b. select ST_AsText(geometry), ST_Area(geometry), ST_Length(ST_ExteriorRing(geometry)) AS boundary from buildings where name like 'BuildingA';
+6c. select name, ST_Area(geometry) from buildings order by name;
+6d. select name, ST_Length(ST_ExteriorRing(geometry)) as boundary  from buildings order by ST_Area(geometry) DESC limit 2;
+6e. select ST_Distance(buildings.geometry, poi.geometry) as distance from buildings cross join poi where buildings.name = 'BuildingC' limit 1;
+6f. select ST_Area(ST_Difference(BuildingC.geometry, ST_Buffer(BuildingB.geometry, 0.5))) as area FROM buildings AS BuildingC, buildings AS BuildingB WHERE BuildingC.name = 'BuildingC' AND BuildingB.name = 'BuildingB';
+6g. select b.name from buildings as b cross join roads as r where ST_Y(ST_Centroid(b.geometry)) > ST_Y(ST_Centroid(r.geometry)) and r.name like 'RoadX';
+6h. select ST_Area(ST_Difference(geometry, ST_GeomFromText('POLYGON((4 7, 6 7, 6 8, 4 8, 4 7))'))) as area from buildings where name like 'BuildingC';
