@@ -52,6 +52,6 @@ where p.type like 'Sporting Goods Store' and lu.type like 'Park %' and ST_Contai
 shp2pgsql.exe D:\cw3\T2019_KAR_GERMANY\T2019_KAR_RAILWAYS.shp railways | psql.exe -h localhost -p 5432 -U postgres -d cw3
 shp2pgsql.exe D:\cw3\T2019_KAR_GERMANY\T2019_KAR_WATER_LINES.shp water_lines | psql.exe -h localhost -p 5432 -U postgres -d cw3
 
-select ST_Intersection(wl.geom, r.geom) as bridges into T2019_KAR_BRIDGES from railways as r
+select distinct ST_Intersection(wl.geom, r.geom) as bridges into T2019_KAR_BRIDGES from railways as r
 cross join water_lines  as wl
 where not st_isempty(ST_Intersection(wl.geom, r.geom)) 
