@@ -1,0 +1,57 @@
+1.
+shp2pgsql.exe D:\cw3\T2019_KAR_GERMANY\T2019_KAR_BUILDINGS.shp Buildings2019 | psql.exe -h localhost -p 5432 -U postgres -d cw3
+shp2pgsql.exe D:\cw3\T2018_KAR_GERMANY\T2018_KAR_BUILDINGS.shp Buildings2018 | psql.exe -h localhost -p 5432 -U postgres -d cw3
+
+select b9.gid, b9.polygon_id, b9."name", b9."type", b9.height, b9.geom from buildings2019 as b9
+left join buildings2018 as b8 on b9.geom = b8.geom
+where b8.gid is null;
+
+2.
+select b9.gid, b9.polygon_id, b9."name", b9."type", b9.height, b9.geom into renovated from buildings2019 as b9
+left join buildings2018 as b8 on b9.geom = b8.geom
+where b8.gid is null;
+
+select p9.gid, p9.poi_id, p9.link_id, p9."type", p9.poi_name, p9.st_name, p9.lat, p9.lon, p9.geom into newPois from poi2019 as p9
+left join poi2018 as p8 on p9.poi_id = p8.poi_id
+where p8.gid is null;
+
+select np."type", count(*) from newpois as np
+cross join renovated as r
+where ST_Contains(ST_Buffer(r.geom, 0.005), np.geom)
+group by np."type";
+
+3.
+shp2pgsql.exe D:\cw3\T2019_KAR_GERMANY\T2019_KAR_STREETS.shp kar_streets | psql.exe -h localhost -p 5432 -U postgres -d cw3
+SELECT gid, link_id, st_name, ref_in_id, nref_in_id, func_class, speed_cat, fr_speed_l, to_speed_l, dir_travel, ST_SetSRID(geom, 3068) as geom into streets_reprojected
+FROM kar_streets;
+
+4.
+CREATE TABLE input_points  (id INTEGER primary key, geom geometry);
+INSERT INTO input_points VALUES
+	(1, 'POINT(8.36093 49.03174)'),
+	(2, 'POINT(8.39876 49.00644)');
+
+5.
+update input_points 
+set geom = st_setsrid(geom, 3068)
+
+6.
+shp2pgsql.exe D:\cw3\T2019_KAR_GERMANY\T2019_KAR_STREET_NODE.shp street_nodes | psql.exe -h localhost -p 5432 -U postgres -d cw3
+
+update street_nodes 
+set geom = st_setsrid(geom, 3068)
+
+select * from street_nodes as sn, input_points as ip, input_points as ip2 
+where ip.id = 1 and ip2.id = 2 and ST_Contains(ST_Buffer(ST_MakeLine(ip.geom, ip2.geom), 0.002), sn.geom);
+
+7.
+select count(*) from poi2019 as p, land_use as lu
+where p.type like 'Sporting Goods Store' and lu.type like 'Park %' and ST_Contains(ST_Buffer(lu.geom, 0.003), p.geom);
+
+8. 
+shp2pgsql.exe D:\cw3\T2019_KAR_GERMANY\T2019_KAR_RAILWAYS.shp railways | psql.exe -h localhost -p 5432 -U postgres -d cw3
+shp2pgsql.exe D:\cw3\T2019_KAR_GERMANY\T2019_KAR_WATER_LINES.shp water_lines | psql.exe -h localhost -p 5432 -U postgres -d cw3
+
+select ST_Intersection(wl.geom, r.geom) as bridges into T2019_KAR_BRIDGES from railways as r
+cross join water_lines  as wl
+where not st_isempty(ST_Intersection(wl.geom, r.geom)) 
