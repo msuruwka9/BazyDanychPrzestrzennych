@@ -29,11 +29,22 @@ FROM shortest_line;
 
 3.
 UPDATE obiekty
-SET geometry = ST_SetSRID(ST_GeomFromText('POLYGON((20 20, 25 25, 27 24, 25 22, 26 21, 22 19, 20.5 19.5, 20 20))'), 0)
+SET geometry = ST_GeomFromText('LINESTRING(20 20, 25 25, 27 24, 25 22, 26 21, 22 19, 20.5 19.5, 20 20)')
 WHERE id = 4;
+
+UPDATE obiekty
+SET geometry = ST_MakePolygon(geometry)
+WHERE id = 4;
+
+Aby stworzyć Polygon Linestring musi mieć pierwszą i ostatnią współrzędną taką samą
 
 4.
 INSERT INTO obiekty (id, name, geometry)
 SELECT 7, 'obiekt7', ST_Collect(geometry)
 FROM obiekty
 WHERE id IN (3, 4);
+
+5.
+SELECT ST_Area(ST_Buffer(geometry, 5)) AS buffer_area
+FROM obiekty
+WHERE NOT ST_HasArc(geometry);
