@@ -9,7 +9,7 @@ insert into obiekty values
 	(3, ST_Collect(array [ 'LINESTRING(10 17, 12 13)', 'LINESTRING(12 13, 7 15)', 'LINESTRING(7 15, 10 17)' ]), 'obiekt3')
 
 insert into obiekty values
-	(4, ST_Collect(array [ 'LINESTRING(20 20, 25 25)', 'LINESTRING(25 25, 27 24)', 'LINESTRING(27 24, 25 22)', 'LINESTRING(25 22, 26 21)', 'LINESTRING(26 21,22 19)', 'LINESTRING(22 19,20.5 19.5)']), 'obiekt4')
+	(4, ST_Collect(array [ 'LINESTRING(20 20, 25 25, 27 24, 25 22, 26 21, 22 19, 20.5 19.5)']), 'obiekt4')
 
 insert into obiekty values
 	(5, ST_Collect(array [ ST_MakePoint(30, 30, 59), ST_MakePoint(38, 32, 234) ]), 'obiekt5')
@@ -26,3 +26,14 @@ WITH shortest_line AS (
 
 SELECT ST_Area(ST_Buffer(geom, 5)) AS buffer_area
 FROM shortest_line;
+
+3.
+UPDATE obiekty
+SET geometry = ST_SetSRID(ST_GeomFromText('POLYGON((20 20, 25 25, 27 24, 25 22, 26 21, 22 19, 20.5 19.5, 20 20))'), 0)
+WHERE id = 4;
+
+4.
+INSERT INTO obiekty (id, name, geometry)
+SELECT 7, 'obiekt7', ST_Collect(geometry)
+FROM obiekty
+WHERE id IN (3, 4);
