@@ -1,0 +1,5 @@
+CREATE EXTENSION postgis_raster CASCADE;
+ALTER SCHEMA schema_name RENAME TO surowka;
+
+.\pg_restore.exe -h localhost -p 5432 -U postgres -d cw6_r "C:\Users\msuro\Desktop\Studia\S7\Bazy Danych Przestrzennych\git\BazyDanychPrzestrzennych\cw6\postgis_raster.backup"
+.\raster2pgsql.exe -s 3763 -N -32767 -t 100x100 -I -C -M -d "C:\Users\msuro\Desktop\Studia\S7\Bazy Danych Przestrzennych\git\BazyDanychPrzestrzennych\cw6\srtm_1arc_v3.tif" rasters.dem | .\psql -d cw6 -h localhost -U postgres -p 5432
