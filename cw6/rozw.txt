@@ -190,3 +190,70 @@ CREATE INDEX idx_porto_ndvi_rast_gist ON surowka.porto_ndvi
 USING gist (ST_ConvexHull(rast));
 
 SELECT AddRasterConstraints('surowka'::name, 'porto_ndvi'::name,'rast'::name);
+
+Przykład 2 – Funkcja zwrotna
+
+create or replace function surowka.ndvi(
+value double precision [] [] [],
+pos integer [][],
+VARIADIC userargs text []
+)
+RETURNS double precision AS
+$$
+BEGIN
+--RAISE NOTICE 'Pixel Value: %', value [1][1][1];-->For debug purposes
+RETURN (value [2][1][1] - value [1][1][1])/(value [2][1][1]+value
+[1][1][1]); --> NDVI calculation!
+END;
+$$
+LANGUAGE 'plpgsql' IMMUTABLE COST 1000;
+
+CREATE TABLE surowka.porto_ndvi2 AS
+WITH r AS (
+SELECT a.rid,ST_Clip(a.rast, b.geom,true) AS rast
+FROM rasters.landsat8 AS a, vectors.porto_parishes AS b
+WHERE b.municipality ilike 'porto' and ST_Intersects(b.geom,a.rast)
+)
+SELECT
+r.rid,ST_MapAlgebra(
+r.rast, ARRAY[1,4],
+'surowka.ndvi(double precision[],
+integer[],text[])'::regprocedure, --> This is the function!
+'32BF'::text
+) AS rast
+FROM r;
+
+CREATE INDEX idx_porto_ndvi2_rast_gist ON surowka.porto_ndvi2
+USING gist (ST_ConvexHull(rast));
+
+SELECT AddRasterConstraints('surowka'::name,
+'porto_ndvi2'::name,'rast'::name);
+
+Przykład 3 - Funkcje TPI
+
+Przykład 1 - ST_AsTiff
+
+SELECT ST_AsTiff(ST_Union(rast))
+FROM surowka.porto_ndvi;
+
+Przykład 2 - ST_AsGDALRaster
+
+SELECT ST_AsGDALRaster(ST_Union(rast), 'GTiff', ARRAY['COMPRESS=DEFLATE',
+'PREDICTOR=2', 'PZLEVEL=9'])
+FROM surowka.porto_ndvi;
+
+Przykład 3 - Zapisywanie danych na dysku za pomocą dużego obiektu (large object, lo)
+
+CREATE TABLE tmp_out AS
+SELECT lo_from_bytea(0,
+ ST_AsGDALRaster(ST_Union(rast), 'GTiff', ARRAY['COMPRESS=DEFLATE',
+'PREDICTOR=2', 'PZLEVEL=9'])
+ ) AS loid
+FROM surowka.porto_ndvi;
+----------------------------------------------
+SELECT lo_export(loid, 'D:\myraster.tiff') --> Save the file in a place where the user postgres have access. In windows a flash drive usualy works fine.
+ FROM tmp_out;
+----------------------------------------------
+SELECT lo_unlink(loid)
+ FROM tmp_out; --> Delete the large object.
+ 
