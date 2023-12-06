@@ -1,0 +1,9 @@
+CREATE TABLE merged_results AS (
+  SELECT 
+    a.*, 
+    b.geom AS extent_geom
+  FROM 
+    "Exports_SAWR" a
+  JOIN 
+    "Exports_GEOTIFF" b ON ST_Intersects(a.geom, b.geom)
+);
